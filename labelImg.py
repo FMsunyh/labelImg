@@ -258,7 +258,7 @@ class MainWindow(QMainWindow, WindowMixin):
         save_format = action('&PascalVOC', self.change_format,
                       'Ctrl+', 'format_voc', u'Change save format', enabled=True)
 
-        finished = action(u'&±êÍêÁË', self.finished_check,
+        finished = action(u'&æ ‡å®Œäº†', self.finished_check,
                              'Ctrl+', 'file_complete', u'check the label', enabled=True)
 
         saveAs = action('&Save As', self.saveFileAs,

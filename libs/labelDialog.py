@@ -59,7 +59,7 @@ class LabelDialog(QDialog):
             self.buttonBox.setFocus()
 
     def searchLabel(self):
-        search_text = self.edit.text().strip()
+        search_text = str(self.edit.text()).strip()
         for i in range(0, self.listWidget.count()):
             item = self.listWidget.item(i)
             if search_text in item.text():
