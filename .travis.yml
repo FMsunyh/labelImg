@@ -74,7 +74,6 @@ matrix:
         - PIPENV_VENV_IN_PROJECT=1
         - PIPENV_IGNORE_VIRTUALENVS=1
       install:
-        - brew upgrade python
         - pip3 install pipenv
         - pipenv --three
         - pipenv run pip install pyqt5 lxml

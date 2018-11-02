@@ -48,7 +48,8 @@ class LabelDialog(QDialog):
             self.listWidget = QListWidget(self)
             for item in listItem:
                 self.listWidget.addItem(item)
-            self.listWidget.itemDoubleClicked.connect(self.listItemClick)
+            self.listWidget.itemClicked.connect(self.listItemClick)
+            self.listWidget.itemDoubleClicked.connect(self.listItemDoubleClick)
             layout.addWidget(self.listWidget)
 
         self.setLayout(layout)
@@ -105,6 +106,9 @@ class LabelDialog(QDialog):
             # PyQt5: AttributeError: 'str' object has no attribute 'trimmed'
             text = tQListWidgetItem.text().strip()
         self.edit.setText(text)
+        
+    def listItemDoubleClick(self, tQListWidgetItem):
+        self.listItemClick(tQListWidgetItem)
         self.validate()
 
     def keyPressEvent(self, QKeyEvent):

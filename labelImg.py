@@ -200,6 +200,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         self.canvas = Canvas(parent=self)
         self.canvas.zoomRequest.connect(self.zoomRequest)
+        self.canvas.setDrawingShapeToSquare(settings.get(SETTING_DRAW_SQUARE, False))
 
         scroll = QScrollArea()
         scroll.setWidget(self.canvas)
@@ -257,7 +258,7 @@ class MainWindow(QMainWindow, WindowMixin):
         save_format = action('&PascalVOC', self.change_format,
                       'Ctrl+', 'format_voc', u'Change save format', enabled=True)
 
-        finished = action(u'&æ ‡å®Œäº†', self.finished_check,
+        finished = action(u'&±êÍêÁË', self.finished_check,
                              'Ctrl+', 'file_complete', u'check the label', enabled=True)
 
         saveAs = action('&Save As', self.saveFileAs,
@@ -351,6 +352,13 @@ class MainWindow(QMainWindow, WindowMixin):
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
 
+        # Draw squares/rectangles
+        self.drawSquaresOption = QAction('Draw Squares', self)
+        self.drawSquaresOption.setShortcut('Ctrl+Shift+R')
+        self.drawSquaresOption.setCheckable(True)
+        self.drawSquaresOption.setChecked(settings.get(SETTING_DRAW_SQUARE, False))
+        self.drawSquaresOption.triggered.connect(self.toogleDrawSquare)
+
         # Store actions for further handling.
         self.actions = struct(save=save, save_format=save_format, finished=finished, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
@@ -363,7 +371,7 @@ class MainWindow(QMainWindow, WindowMixin):
                                   open, opendir, save, saveAs, close, resetAll, quit),
                               beginner=(), advanced=(),
                               editMenu=(edit, copy, delete,
-                                        None, color1),
+                                        None, color1, self.drawSquaresOption),
                               beginnerContext=(create, edit, copy, delete),
                               advancedContext=(createMode, editMode, edit, copy,
                                                delete, shapeLineColor, shapeFillColor),
@@ -389,6 +397,12 @@ class MainWindow(QMainWindow, WindowMixin):
         self.singleClassMode.setCheckable(True)
         self.singleClassMode.setChecked(settings.get(SETTING_SINGLE_CLASS, False))
         self.lastLabel = None
+        # Add option to enable/disable labels being painted at the top of bounding boxes
+        self.paintLabelsOption = QAction("Paint Labels", self)
+        self.paintLabelsOption.setShortcut("Ctrl+Shift+P")
+        self.paintLabelsOption.setCheckable(True)
+        self.paintLabelsOption.setChecked(settings.get(SETTING_PAINT_LABEL, False))
+        self.paintLabelsOption.triggered.connect(self.togglePaintLabelsOption)
 
         # addActions(self.menus.file,
         #            (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
@@ -398,6 +412,7 @@ class MainWindow(QMainWindow, WindowMixin):
         addActions(self.menus.view, (
             self.autoSaving,
             self.singleClassMode,
+            self.paintLabelsOption,
             labels, advancedMode, None,
             hideAll, showAll, None,
             zoomIn, zoomOut, zoomOrg, None,
@@ -512,23 +527,34 @@ class MainWindow(QMainWindow, WindowMixin):
             if search_text in str:
                 self.fileListWidget.setCurrentItem(item)
 
+    def keyReleaseEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            self.canvas.setDrawingShapeToSquare(False)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Control:
+            # Draw rectangle if Ctrl is pressed
+            self.canvas.setDrawingShapeToSquare(True)
+
     ## Support Functions ##
     def set_format(self, save_format):
-        if save_format == 'PascalVOC':
-            self.actions.save_format.setText("PascalVOC")
+        if save_format == FORMAT_PASCALVOC:
+            self.actions.save_format.setText(FORMAT_PASCALVOC)
             self.actions.save_format.setIcon(newIcon("format_voc"))
             self.usingPascalVocFormat = True
             self.usingYoloFormat = False
+            LabelFile.suffix = XML_EXT
 
-        elif save_format == 'YOLO':
-            self.actions.save_format.setText("YOLO")
+        elif save_format == FORMAT_YOLO:
+            self.actions.save_format.setText(FORMAT_YOLO)
             self.actions.save_format.setIcon(newIcon("format_yolo"))
             self.usingPascalVocFormat = False
             self.usingYoloFormat = True
+            LabelFile.suffix = TXT_EXT
 
     def change_format(self):
-        if self.usingPascalVocFormat: self.set_format("YOLO")
-        elif self.usingYoloFormat: self.set_format("PascalVOC")
+        if self.usingPascalVocFormat: self.set_format(FORMAT_YOLO)
+        elif self.usingYoloFormat: self.set_format(FORMAT_PASCALVOC)
 
     def finished_check(self):
         p = Process(target=libs.cut_bbox.finished_check, args=(os.path.join(self.dirname,'../'), ))
@@ -750,6 +776,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.shapeFillColor.setEnabled(selected)
 
     def addLabel(self, shape):
+        shape.paintLabel = self.paintLabelsOption.isChecked()
         item = HashableQListWidgetItem(shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
@@ -826,12 +853,14 @@ class MainWindow(QMainWindow, WindowMixin):
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
-                annotationFilePath += XML_EXT
+                if ustr(annotationFilePath[-4:]) != ".xml":
+                    annotationFilePath += XML_EXT
                 print ('Img: ' + self.filePath + ' -> Its xml: ' + annotationFilePath)
                 self.labelFile.savePascalVocFormat(annotationFilePath, shapes, self.filePath, self.imageData,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
             elif self.usingYoloFormat is True:
-                annotationFilePath += TXT_EXT
+                if annotationFilePath[-4:] != ".txt":
+                    annotationFilePath += TXT_EXT
                 print ('Img: ' + self.filePath + ' -> Its txt: ' + annotationFilePath)
                 self.labelFile.saveYoloFormat(annotationFilePath, shapes, self.filePath, self.imageData, self.labelHist,
                                                    self.lineColor.getRgb(), self.fillColor.getRgb())
@@ -999,7 +1028,7 @@ class MainWindow(QMainWindow, WindowMixin):
             filePath = self.settings.get(SETTING_FILENAME)
 
         # Make sure that filePath is a regular python string, rather than QString
-        filePath = str(filePath)
+        filePath = ustr(filePath)
 
         unicodeFilePath = ustr(filePath)
         # Tzutalin 20160906 : Add file list and dock to move faster
@@ -1023,11 +1052,13 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.imageData = self.labelFile.imageData
                 self.lineColor = QColor(*self.labelFile.lineColor)
                 self.fillColor = QColor(*self.labelFile.fillColor)
+                self.canvas.verified = self.labelFile.verified
             else:
                 # Load image:
                 # read data first and store for saving into label file.
                 self.imageData = read(unicodeFilePath, None)
                 self.labelFile = None
+                self.canvas.verified = False
 
             image = QImage.fromData(self.imageData)
             if image.isNull():
@@ -1144,6 +1175,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         settings[SETTING_AUTO_SAVE] = self.autoSaving.isChecked()
         settings[SETTING_SINGLE_CLASS] = self.singleClassMode.isChecked()
+        settings[SETTING_PAINT_LABEL] = self.paintLabelsOption.isChecked()
+        settings[SETTING_DRAW_SQUARE] = self.drawSquaresOption.isChecked()
         settings.save()
     ## User Dialogs ##
 
@@ -1217,6 +1250,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if not self.mayContinue() or not dirpath:
             return
 
+
         self.lastOpenDir = dirpath
         self.dirname = dirpath
         self.filePath = None
@@ -1235,14 +1269,17 @@ class MainWindow(QMainWindow, WindowMixin):
 
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
-         if self.filePath is not None:
+        if self.filePath is not None:
             try:
                 self.labelFile.toggleVerify()
             except AttributeError:
                 # If the labelling file does not exist yet, create if and
                 # re-save it with the verified attribute.
                 self.saveFile()
-                self.labelFile.toggleVerify()
+                if self.labelFile != None:
+                    self.labelFile.toggleVerify()
+                else:
+                    return
 
             self.canvas.verified = self.labelFile.verified
             self.paintCanvas()
@@ -1343,7 +1380,8 @@ class MainWindow(QMainWindow, WindowMixin):
         dlg.selectFile(filenameWithoutExtension)
         dlg.setOption(QFileDialog.DontUseNativeDialog, False)
         if dlg.exec_():
-            return dlg.selectedFiles()[0]
+            fullFilePath = ustr(dlg.selectedFiles()[0])
+            return os.path.splitext(fullFilePath)[0] # Return file path without the extension.
         return ''
 
     def _saveFile(self, annotationFilePath):
@@ -1440,7 +1478,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if os.path.isfile(xmlPath) is False:
             return
 
-        self.set_format("PascalVOC")
+        self.set_format(FORMAT_PASCALVOC)
 
         tVocParseReader = PascalVocReader(xmlPath)
         shapes = tVocParseReader.getShapes()
@@ -1453,14 +1491,20 @@ class MainWindow(QMainWindow, WindowMixin):
         if os.path.isfile(txtPath) is False:
             return
 
-        self.set_format("YOLO")
+        self.set_format(FORMAT_YOLO)
         tYoloParseReader = YoloReader(txtPath, self.image)
         shapes = tYoloParseReader.getShapes()
         print (shapes)
         self.loadLabels(shapes)
         self.canvas.verified = tYoloParseReader.verified
 
+    def togglePaintLabelsOption(self):
+        paintLabelsOptionChecked = self.paintLabelsOption.isChecked()
+        for shape in self.canvas.shapes:
+            shape.paintLabel = paintLabelsOptionChecked
 
+    def toogleDrawSquare(self):
+        self.canvas.setDrawingShapeToSquare(self.drawSquaresOption.isChecked())
 
 def inverted(color):
     return QColor(*[255 - v for v in color.getRgb()])

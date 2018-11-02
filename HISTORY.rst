@@ -2,6 +2,25 @@
 History
 =======
 
+1.8.0 (2018-10-21)
+------------------
+
+* Support drawing sqaure rect
+* Add item single click slot
+* Fix issues
+
+1.7.0 (2018-05-18)
+------------------
+
+* Support YOLO
+* Fix minor issues
+
+
+1.6.1 (2018-04-17)
+------------------
+
+* Fix issue
+
 1.6.0 (2018-01-29)
 ------------------
 
