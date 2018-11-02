@@ -1,5 +1,6 @@
 #!/bin/bash
 ### Window requires pyinstall v2.1
+#DISPLAY=:0
 wine msiexec -i python-2.7.8.msi
 wine pywin32-218.win32-py2.7.exe
 wine PyQt4-4.11.4-gpl-Py2.7-Qt4.8.7-x32.exe

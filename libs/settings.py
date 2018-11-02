@@ -36,6 +36,7 @@ class Settings(object):
 
     def reset(self):
         if os.path.exists(self.path):
+
             os.remove(self.path)
             print ('Remove setting pkl file ${0}'.format(self.path))
         self.data = {}

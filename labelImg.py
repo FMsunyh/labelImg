@@ -10,6 +10,9 @@ import subprocess
 
 from functools import partial
 from collections import defaultdict
+from multiprocessing import Process, freeze_support
+
+import libs.cut_bbox
 
 try:
     from PyQt5.QtGui import *
@@ -168,11 +171,24 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dock.setWidget(labelListContainer)
 
         # Tzutalin 20160906 : Add file list and dock to move faster
+        self.searchTextLine = QLineEdit()
+        self.searchTextLine.textChanged.connect(self.searchFile)
+
+        # model = QStringListModel()
+        # model.setStringList(self.mImgList)
+        # completer = QCompleter()
+        # completer.setModel(model)
+        # self.searchTextLine.setCompleter(completer)
+
         self.fileListWidget = QListWidget()
         self.fileListWidget.itemDoubleClicked.connect(self.fileitemDoubleClicked)
+
         filelistLayout = QVBoxLayout()
         filelistLayout.setContentsMargins(0, 0, 0, 0)
+
+        filelistLayout.addWidget(self.searchTextLine)
         filelistLayout.addWidget(self.fileListWidget)
+
         fileListContainer = QWidget()
         fileListContainer.setLayout(filelistLayout)
         self.filedock = QDockWidget(u'File List', self)
@@ -240,6 +256,9 @@ class MainWindow(QMainWindow, WindowMixin):
 
         save_format = action('&PascalVOC', self.change_format,
                       'Ctrl+', 'format_voc', u'Change save format', enabled=True)
+
+        finished = action(u'&标完了', self.finished_check,
+                             'Ctrl+', 'file_complete', u'check the label', enabled=True)
 
         saveAs = action('&Save As', self.saveFileAs,
                         'Ctrl+Shift+S', 'save-as', u'Save labels to a different file', enabled=False)
@@ -333,7 +352,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.popLabelListMenu)
 
         # Store actions for further handling.
-        self.actions = struct(save=save, save_format=save_format, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
+        self.actions = struct(save=save, save_format=save_format, finished=finished, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
@@ -371,8 +390,10 @@ class MainWindow(QMainWindow, WindowMixin):
         self.singleClassMode.setChecked(settings.get(SETTING_SINGLE_CLASS, False))
         self.lastLabel = None
 
+        # addActions(self.menus.file,
+        #            (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
         addActions(self.menus.file,
-                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
+                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, finished, saveAs, close, resetAll, quit))
         addActions(self.menus.help, (help, showInfo))
         addActions(self.menus.view, (
             self.autoSaving,
@@ -391,12 +412,21 @@ class MainWindow(QMainWindow, WindowMixin):
             action('&Move here', self.moveShape)))
 
         self.tools = self.toolbar('Tools')
+        # self.actions.beginner = (
+        #     open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, save_format, None, create, copy, delete, None,
+        #     zoomIn, zoom, zoomOut, fitWindow, fitWidth)
+        #
+        # self.actions.advanced = (
+        #     open, opendir, changeSavedir, openNextImg, openPrevImg, save, save_format, None,
+        #     createMode, editMode, None,
+        #     hideAll, showAll)
+
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, save_format, None, create, copy, delete, None,
+            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, None, create, copy, delete, None,
             zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, save, save_format, None,
+            open, opendir, changeSavedir, openNextImg, openPrevImg, save, None,
             createMode, editMode, None,
             hideAll, showAll)
 
@@ -473,6 +503,15 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.filePath and os.path.isdir(self.filePath):
             self.openDirDialog(dirpath=self.filePath)
 
+    def searchFile(self):
+        search_text = self.searchTextLine.text()
+        for i in range(0, self.fileListWidget.count()):
+            item = self.fileListWidget.item(i)
+            str = item.text()
+            str = str[-10:-1]
+            if search_text in str:
+                self.fileListWidget.setCurrentItem(item)
+
     ## Support Functions ##
     def set_format(self, save_format):
         if save_format == 'PascalVOC':
@@ -490,6 +529,10 @@ class MainWindow(QMainWindow, WindowMixin):
     def change_format(self):
         if self.usingPascalVocFormat: self.set_format("YOLO")
         elif self.usingYoloFormat: self.set_format("PascalVOC")
+
+    def finished_check(self):
+        p = Process(target=libs.cut_bbox.finished_check, args=(os.path.join(self.dirname,'../'), ))
+        p.start()
 
     def noShapes(self):
         return not self.itemsToShapes
@@ -710,7 +753,7 @@ class MainWindow(QMainWindow, WindowMixin):
         item = HashableQListWidgetItem(shape.label)
         item.setFlags(item.flags() | Qt.ItemIsUserCheckable)
         item.setCheckState(Qt.Checked)
-        item.setBackground(generateColorByText(shape.label))
+        # item.setBackground(generateColorByText(shape.label))
         self.itemsToShapes[item] = shape
         self.shapesToItems[shape] = item
         self.labelList.addItem(item)
@@ -764,7 +807,22 @@ class MainWindow(QMainWindow, WindowMixin):
                        # add chris
                         difficult = s.difficult)
 
+        def check_label(shapes):
+
+            for shape in shapes:
+                label = shape['label']
+                if label not in self.labelHist:
+                    buttonReply = QMessageBox.warning (self, 'label error', "'{}' is not predefined label.\nPlease correct it and save again.".format(label))
+                    return False
+
+
+            return True
+
         shapes = [format_shape(shape) for shape in self.canvas.shapes]
+        if not check_label(shapes):
+            print('save error')
+            return
+
         # Can add differrent annotation formats here
         try:
             if self.usingPascalVocFormat is True:
@@ -844,7 +902,9 @@ class MainWindow(QMainWindow, WindowMixin):
             self.setDirty()
 
             if text not in self.labelHist:
-                self.labelHist.append(text)
+                # self.labelHist.append(text)
+                QMessageBox.warning(self, 'label error',  "'{}' is not predefined label.\nPlease correct it.".format(text))
+
         else:
             # self.canvas.undoLastLine()
             self.canvas.resetAllLines()
@@ -1150,6 +1210,7 @@ class MainWindow(QMainWindow, WindowMixin):
         targetDirPath = ustr(QFileDialog.getExistingDirectory(self,
                                                      '%s - Open Directory' % __appname__, defaultOpenDirPath,
                                                      QFileDialog.ShowDirsOnly | QFileDialog.DontResolveSymlinks))
+        print(targetDirPath)
         self.importDirImages(targetDirPath)
 
     def importDirImages(self, dirpath):
@@ -1166,6 +1227,12 @@ class MainWindow(QMainWindow, WindowMixin):
             item = QListWidgetItem(imgPath)
             self.fileListWidget.addItem(item)
 
+        # model = QStringListModel()
+        # model.setStringList(self.mImgList)
+        # completer = QCompleter()
+        # completer.setModel(model)
+        # self.searchTextLine.setCompleter(completer)
+
     def verifyImg(self, _value=False):
         # Proceding next image without dialog if having any label
          if self.filePath is not None:
@@ -1180,6 +1247,7 @@ class MainWindow(QMainWindow, WindowMixin):
             self.canvas.verified = self.labelFile.verified
             self.paintCanvas()
             self.saveFile()
+            self.openNextImg()
 
     def openPrevImg(self, _value=False):
         # Proceding prev image without dialog if having any label
@@ -1411,11 +1479,15 @@ def get_main_app(argv=[]):
     Standard boilerplate Qt application code.
     Do everything but app.exec_() -- so that we can test the application in one thread
     """
+    freeze_support()
+
     app = QApplication(argv)
     app.setApplicationName(__appname__)
     app.setWindowIcon(newIcon("app"))
     # Tzutalin 201705+: Accept extra agruments to change predefined class file
     # Usage : labelImg.py image predefClassFile saveDir
+    QObject.connect(app, SIGNAL("lastWindowClosed()"), app, SLOT("quit()"))
+
     win = MainWindow(argv[1] if len(argv) >= 2 else None,
                      argv[2] if len(argv) >= 3 else os.path.join(
                          os.path.dirname(sys.argv[0]),
