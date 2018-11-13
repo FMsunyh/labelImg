@@ -259,7 +259,7 @@ class MainWindow(QMainWindow, WindowMixin):
                       'Ctrl+', 'format_voc', u'Change save format', enabled=True)
 
         finished = action(u'&标完了', self.finished_check,
-                             'Ctrl+', 'file_complete', u'check the label', enabled=True)
+                             'Ctrl+f', 'file_complete', u'check the label', enabled=True)
 
         saveAs = action('&Save As', self.saveFileAs,
                         'Ctrl+Shift+S', 'save-as', u'Save labels to a different file', enabled=False)
@@ -278,8 +278,10 @@ class MainWindow(QMainWindow, WindowMixin):
 
         create = action('Create\nRectBox', self.createShape,
                         'w', 'new', u'Draw a new Box', enabled=False)
-        delete = action('Delete\nRectBox', self.deleteSelectedShape,
-                        'Delete', 'delete', u'Delete', enabled=False)
+        delete_shape = action('Delete\nRectBox', self.deleteSelectedShape,
+                        'Delete', 'delete', u'Delete RectBox', enabled=False)
+        delete_im = action('Delete\nImage', self.deleteImage,
+                        'Ctrl+Delete', 'delete_image', u'Delete Image', enabled=True)
         copy = action('&Duplicate\nRectBox', self.copySelectedShape,
                       'Ctrl+D', 'copy', u'Create a duplicate of the selected Box',
                       enabled=False)
@@ -347,7 +349,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Lavel list context menu.
         labelMenu = QMenu()
-        addActions(labelMenu, (edit, delete))
+        addActions(labelMenu, (edit, delete_shape))
+        addActions(labelMenu, (edit, delete_im))
         self.labelList.setContextMenuPolicy(Qt.CustomContextMenu)
         self.labelList.customContextMenuRequested.connect(
             self.popLabelListMenu)
@@ -361,7 +364,7 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Store actions for further handling.
         self.actions = struct(save=save, save_format=save_format, finished=finished, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
-                              lineColor=color1, create=create, delete=delete, edit=edit, copy=copy,
+                              lineColor=color1, create=create,delete_shape=delete_shape, delete_im=delete_im, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
                               zoom=zoom, zoomIn=zoomIn, zoomOut=zoomOut, zoomOrg=zoomOrg,
@@ -370,11 +373,11 @@ class MainWindow(QMainWindow, WindowMixin):
                               fileMenuActions=(
                                   open, opendir, save, saveAs, close, resetAll, quit),
                               beginner=(), advanced=(),
-                              editMenu=(edit, copy, delete,
+                              editMenu=(edit, copy, delete_shape, delete_im,
                                         None, color1, self.drawSquaresOption),
-                              beginnerContext=(create, edit, copy, delete),
-                              advancedContext=(createMode, editMode, edit, copy,
-                                               delete, shapeLineColor, shapeFillColor),
+                              beginnerContext=(create, edit, copy, delete_shape,delete_im),
+                              advancedContext=(createMode, editMode, edit, copy,delete_shape,
+                                               delete_im, shapeLineColor, shapeFillColor),
                               onLoadActive=(
                                   close, create, createMode, editMode),
                               onShapesPresent=(saveAs, hideAll, showAll))
@@ -437,8 +440,11 @@ class MainWindow(QMainWindow, WindowMixin):
         #     hideAll, showAll)
 
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, None, create, copy, delete, None,
-            zoomIn, zoom, zoomOut, fitWindow, fitWidth)
+            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished,None,create, delete_shape, None, delete_im, None)
+            # open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished,  delete_im, None, create, copy , None,
+            # zoomIn, zoom, zoomOut, fitWindow, fitWidth)
+            #  (open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, None, create, copy,delete_im, None,
+            # zoomIn, zoom, zoomOut, fitWindow, fitWidth)
 
         self.actions.advanced = (
             open, opendir, changeSavedir, openNextImg, openPrevImg, save, None,
@@ -769,7 +775,7 @@ class MainWindow(QMainWindow, WindowMixin):
                 self.shapesToItems[shape].setSelected(True)
             else:
                 self.labelList.clearSelection()
-        self.actions.delete.setEnabled(selected)
+        self.actions.delete_shape.setEnabled(selected)
         self.actions.copy.setEnabled(selected)
         self.actions.edit.setEnabled(selected)
         self.actions.shapeLineColor.setEnabled(selected)
@@ -1436,6 +1442,19 @@ class MainWindow(QMainWindow, WindowMixin):
         if self.noShapes():
             for action in self.actions.onShapesPresent:
                 action.setEnabled(False)
+
+    def deleteImage(self):
+        if os.path.exists(self.filePath):
+            os.remove(self.filePath)
+
+        file_name = os.path.basename(self.filePath)
+        name,ext = os.path.splitext(file_name)
+
+        anno_xml = os.path.join(self.defaultSaveDir, name+'.xml')
+        if os.path.exists(anno_xml):
+            os.remove(anno_xml)
+
+        self.importDirImages(self.dirname)
 
     def chshapeLineColor(self):
         color = self.colorDialog.getColor(self.lineColor, u'Choose line color',
