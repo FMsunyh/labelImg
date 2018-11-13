@@ -259,7 +259,7 @@ class MainWindow(QMainWindow, WindowMixin):
                       'Ctrl+', 'format_voc', u'Change save format', enabled=True)
 
         finished = action(u'&标完了', self.finished_check,
-                             'Ctrl+f', 'file_complete', u'check the label', enabled=True)
+                             'Ctrl+f', 'file_complete', u'check the label', enabled=False)
 
         saveAs = action('&Save As', self.saveFileAs,
                         'Ctrl+Shift+S', 'save-as', u'Save labels to a different file', enabled=False)
@@ -281,7 +281,7 @@ class MainWindow(QMainWindow, WindowMixin):
         delete_shape = action('Delete\nRectBox', self.deleteSelectedShape,
                         'Delete', 'delete', u'Delete RectBox', enabled=False)
         delete_im = action('Delete\nImage', self.deleteImage,
-                        'Ctrl+Delete', 'delete_image', u'Delete Image', enabled=True)
+                        'Ctrl+Delete', 'delete_image', u'Delete Image', enabled=False)
         copy = action('&Duplicate\nRectBox', self.copySelectedShape,
                       'Ctrl+D', 'copy', u'Create a duplicate of the selected Box',
                       enabled=False)
@@ -563,6 +563,9 @@ class MainWindow(QMainWindow, WindowMixin):
         elif self.usingYoloFormat: self.set_format(FORMAT_PASCALVOC)
 
     def finished_check(self):
+        if None == self.dirname:
+            return
+
         p = Process(target=libs.cut_bbox.finished_check, args=(os.path.join(self.dirname,'../'), ))
         p.start()
 
@@ -611,6 +614,8 @@ class MainWindow(QMainWindow, WindowMixin):
         self.dirty = False
         self.actions.save.setEnabled(False)
         self.actions.create.setEnabled(True)
+        self.actions.finished.setEnabled(True)
+        self.actions.delete_im.setEnabled(True)
 
     def toggleActions(self, value=True):
         """Enable/Disable widgets which depend on an opened image."""
@@ -1444,6 +1449,9 @@ class MainWindow(QMainWindow, WindowMixin):
                 action.setEnabled(False)
 
     def deleteImage(self):
+        if self.filePath == None:
+            return
+
         if os.path.exists(self.filePath):
             os.remove(self.filePath)
 
