@@ -1,0 +1,15 @@
+## v2.6.0
+build：2019-06-10
+增强：可视化，增大矩形框和圆点。
+version：labelImg_v.2.6.0
+
+
+## v2.6.2
+* build：2019-06-10
+
+* features
+支持 win7系统.
+重新配置了环境，打包程序.
+使用pyinstaller 2.1打包， pyinstaller 3在win7无法使用
+
+* version：labelImg_v.2.6.2
