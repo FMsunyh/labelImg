@@ -10,6 +10,7 @@ labelImg.egg-info*
 
 build/
 dist/
+pyinstaller2.1/
 
 tags
 cscope*
@@ -17,3 +18,5 @@ cscope*
 .subvimrc
 .vscode
 *.pkl
+
+test/

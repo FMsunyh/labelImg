@@ -39,3 +39,15 @@ pyrcc4 -py3 -o resources.py resources.qrc
 
 cd G:\labelImg\build-tools
 pyinstaller --hidden-import=xml  --hidden-import=xml.etree --hidden-import=xml.etree.ElementTree --hidden-import=lxml.etree  -D -F -n labelImg_v.2.0.0 -c "../labelImg.py" -p ../libs -p ../
+
+
+build：2019-06-10
+增强：可视化，增大矩形框和圆点。
+version：labelImg_v.2.6.0
+
+activate label_pyinstaller
+cd G:\labelImg\
+pyrcc4 -py3 -o resources.py resources.qrc
+
+cd G:\labelImg\build-tools
+pyinstaller --hidden-import=xml  --hidden-import=xml.etree --hidden-import=xml.etree.ElementTree --hidden-import=lxml.etree  -D -F -n labelImg_v.2.6.0 -c "../labelImg.py" -p ../libs -p ../
