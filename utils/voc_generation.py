@@ -48,13 +48,13 @@ class Voc_generation(object):
     def get_epoch(self):
         return self._epoch
 
-    def get_files_from_dir(self, dir, ext='.jpg'):
+    def get_files_from_dir(self, dir, ext=['.jpg','JPG','JPEG','.png','.PNG']):
         jpg_dir = os.path.join(dir, 'JPEGImages')
         result_list = []
         for root, _, files in os.walk(jpg_dir):
             result_list.extend([os.path.join(root, fn) for fn in files
-                                if os.path.splitext(fn)[1]==ext])
-        logging.info('{} get {} {} files'.format(dir, len(result_list), ext))
+                                if os.path.splitext(fn)[1] in ext])
+        logging.info('{} get {} images'.format(dir, len(result_list)))
         return result_list
 
     def get_xml_by_jpg(self, jpg):

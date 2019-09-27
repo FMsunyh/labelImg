@@ -41,7 +41,7 @@ def get_files_from_dir(dir, ext='.jpg'):
     result_list = []
     for root, _, files in os.walk(dir):
         result_list.extend([os.path.join(root, fn) for fn in files
-                            if os.path.splitext(fn)[1]== ext])
+                            if os.path.splitext(fn)[1] == ext])
     print(' get {} {} files'.format(len(result_list), ext))
     return result_list
 

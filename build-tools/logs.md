@@ -31,3 +31,10 @@ version：labelImg_v.2.6.0
 
 * version：labelImg_v2.10.1
 
+## v2.10.2
+* build：2019-09-27
+
+* features
+自动标注功能支持图片格式：'.jpg','JPG','JPEG','.png','.PNG'
+
+* version：labelImg_v2.10.2
