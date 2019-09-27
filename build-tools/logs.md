@@ -13,3 +13,21 @@ version：labelImg_v.2.6.0
 使用pyinstaller 2.1打包， pyinstaller 3在win7无法使用
 
 * version：labelImg_v.2.6.2
+
+## v2.10.0
+* build：2019-09-27
+
+* features
+添加自动标注功能
+
+* version：labelImg_v2.10.0
+
+## v2.10.1
+* build：2019-09-27
+
+* bug fix
+根路径修复
+提示框
+
+* version：labelImg_v2.10.1
+

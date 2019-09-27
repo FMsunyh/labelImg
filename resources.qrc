@@ -31,6 +31,7 @@
 <file alias="prev">icons/prev.png</file>
 <file alias="resetall">icons/resetall.png</file>
 <file alias="file_complete">icons/file_complete.png</file>
+<file alias="auto_makebbox">icons/auto_makebbox.png</file>
 <file alias="delete_image">icons/delete_image.png</file>
 </qresource>
 </RCC>
