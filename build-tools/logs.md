@@ -38,3 +38,12 @@ version：labelImg_v.2.6.0
 自动标注功能支持图片格式：'.jpg','JPG','JPEG','.png','.PNG'
 
 * version：labelImg_v2.10.2
+
+## v2.10.3
+* build：2019-10-11
+
+* features
+修改自动标框
+添加自动标注功能
+
+* version：labelImg_v2.10.3

@@ -10,3 +10,5 @@ PyInstaller==2.1
 pypiwin32==223
 pywin32==223
 wincertstore==0.2
+pillow==6.2.0
+requests==2.22.0

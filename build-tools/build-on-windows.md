@@ -14,5 +14,4 @@ cd G:\labelImg\
 pyrcc4 -py3 -o resources.py resources.qrc
 
 cd G:\labelImg\build-tools
-pyinstaller --hidden-import=xml  --hidden-import=xml.etree --hidden-import=xml.etree.ElementTree --hidden-import=lxml.etree  -D -F -n labelImg_v2.6.2 -c "../labelImg.py" -p ../libs -p ../
-pyinstaller --hidden-import=xml  --hidden-import=xml.etree --hidden-import=xml.etree.ElementTree --hidden-import=lxml.etree  -D -F -n labelImg_v2.10.1 -c "../labelImg.py" -p ../libs -p ../
+pyinstaller --hidden-import=xml  --hidden-import=xml.etree --hidden-import=xml.etree.ElementTree --hidden-import=lxml.etree  -D -F -n labelImg_v2.10.2 -c "../labelImg.py" -p ../libs -p ../
