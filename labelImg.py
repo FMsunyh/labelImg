@@ -105,6 +105,8 @@ class MainWindow(QMainWindow, WindowMixin):
 
         # Save as Pascal voc xml
         self.defaultSaveDir = defaultSaveDir
+        self.defaultConfigFile = os.path.join(os.path.dirname(defaultPrefdefClassFile), 'config.yaml')
+
         self.usingPascalVocFormat = True
         self.usingYoloFormat = False
 
@@ -588,7 +590,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if os.path.exists(os.path.join(path, 'Annotations')):
             reply =  QMessageBox.warning(self, 'Warning',"Annotations is existed.\nDo you want to rewrite it",QMessageBox.Yes|QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
-                p = Process(target=libs.auto_makebbox.do_makebbox, args=(path, ))
+                p = Process(target=libs.auto_makebbox.do_makebbox, args=(path, self.defaultConfigFile, ))
                 p.start()
         else:
             p = Process(target=libs.auto_makebbox.do_makebbox, args=(path,))
@@ -605,7 +607,7 @@ class MainWindow(QMainWindow, WindowMixin):
         if os.path.exists(os.path.join(path, 'Annotations')):
             reply =  QMessageBox.warning(self, 'Warning',"Annotations is existed.\nDo you want to rewrite it",QMessageBox.Yes|QMessageBox.Cancel)
             if reply == QMessageBox.Yes:
-                p = Process(target=libs.auto_prelebal.do_prelabel, args=(path, ))
+                p = Process(target=libs.auto_prelebal.do_prelabel, args=(path,self.defaultConfigFile, ))
                 p.start()
         else:
             p = Process(target=libs.auto_prelebal.do_prelabel, args=(path,))

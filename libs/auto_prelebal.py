@@ -38,6 +38,7 @@ import requests
 import argparse
 import datetime
 from PIL import Image
+from config import cfg
 
 # input workspace
 root_path = os.path.abspath(os.path.join(__file__, '..'))
@@ -115,7 +116,16 @@ def callback2boxes(callback):
 def success(callback):
     return json.loads(callback)['status'] == 100000
 
-def do_fun(path):
+def read_setting(path):
+    # read data from setting,cfg
+
+    cfg.merge_from_file(path)
+
+    host = cfg.OBDT_CLS.IP
+    port = cfg.OBDT_CLS.PORT
+    return host, str(port)
+
+def do_fun(path,defaultConfigFile):
     #1 open image
 
     # base 64code
@@ -128,9 +138,9 @@ def do_fun(path):
 
     # init tools
     package_dir = path
-    # host = '192.168.1.124'
-    host = '192.168.1.179'
-    port = '16888'
+
+    host, port = read_setting(defaultConfigFile)
+
     dataSet = load_dataSet(package_dir)
     xml_saver = XmlSaver()
     xml_context = XmlContext
@@ -169,8 +179,8 @@ def do_fun(path):
         xml_saver.save(xml_context)
         print('[{}/{}]{} have saved success!'.format(count,dataSet.size(), xml_path))
 
-def do_prelabel(input_path):
-    do_fun(input_path)
+def do_prelabel(input_path, defaultConfigFile):
+    do_fun(input_path, defaultConfigFile)
 
     print('proccess successfully.')
 
