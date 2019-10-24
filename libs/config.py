@@ -24,7 +24,7 @@ limitations under the License.
 from yacs.config import CfgNode as CN
 import os.path as osp
 
-_C = CN()
+_C = CN(new_allowed=True)
 
 _C.OBDT_01 = CN()
 _C.OBDT_01.IP = '192.168.1.179'

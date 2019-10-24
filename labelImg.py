@@ -15,6 +15,7 @@ from multiprocessing import Process, freeze_support
 import libs.cut_bbox
 import libs.auto_makebbox
 import libs.auto_prelebal
+import libs.auto_searchid
 
 try:
     from PyQt5.QtGui import *
@@ -265,11 +266,14 @@ class MainWindow(QMainWindow, WindowMixin):
         finished = action(u'&标完了', self.finished_check,
                              'Ctrl+f', 'file_complete', u'check the label', enabled=False)
 
-        auto_bbox = action(u'&自动标框', self.auto_makebbox,
-                          'Ctrl+u', 'auto_makebbox', u'auto make gt bbox', enabled=False)
+        auto_bbox = action(u'&自动标框', self.makebbox,
+                          'Ctrl+u', 'makebbox', u'auto make gt bbox', enabled=False)
 
-        auto_label = action(u'&自动标注', self.auto_prelebal,
-                      'Ctrl+u', 'auto_prelebal', u'auto make gt label bbox', enabled=False)
+        auto_label = action(u'&自动标注', self.prelebal,
+                      'Ctrl+u', 'prelebal', u'auto make gt label', enabled=False)
+
+        auto_searchid = action(u'&Search ID', self.searchid,
+                            'Ctrl+u', 'searchid', u'auto search id of image', enabled=False)
 
         saveAs = action('&Save As', self.saveFileAs,
                         'Ctrl+Shift+S', 'save-as', u'Save labels to a different file', enabled=False)
@@ -373,7 +377,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.drawSquaresOption.triggered.connect(self.toogleDrawSquare)
 
         # Store actions for further handling.
-        self.actions = struct(save=save, save_format=save_format, finished=finished, auto_bbox=auto_bbox,auto_label=auto_label,saveAs=saveAs, open=open, close=close, resetAll = resetAll,
+        self.actions = struct(save=save, save_format=save_format, finished=finished, auto_bbox=auto_bbox,auto_label=auto_label, auto_searchid=auto_searchid, saveAs=saveAs, open=open, close=close, resetAll = resetAll,
                               lineColor=color1, create=create,delete_shape=delete_shape, delete_im=delete_im, edit=edit, copy=copy,
                               createMode=createMode, editMode=editMode, advancedMode=advancedMode,
                               shapeLineColor=shapeLineColor, shapeFillColor=shapeFillColor,
@@ -420,7 +424,7 @@ class MainWindow(QMainWindow, WindowMixin):
         # addActions(self.menus.file,
         #            (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, save_format, saveAs, close, resetAll, quit))
         addActions(self.menus.file,
-                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, finished,auto_bbox,auto_label, saveAs, close, resetAll, quit))
+                   (open, opendir, changeSavedir, openAnnotation, self.menus.recentFiles, save, finished,auto_bbox,auto_label,auto_searchid, saveAs, close, resetAll, quit))
         addActions(self.menus.help, (help, showInfo))
         addActions(self.menus.view, (
             self.autoSaving,
@@ -450,7 +454,7 @@ class MainWindow(QMainWindow, WindowMixin):
         #     hideAll, showAll)
 
         self.actions.beginner = (
-            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, auto_bbox, auto_label,None,create, delete_shape, None, delete_im, None)
+            open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, auto_bbox, auto_label,auto_searchid,None,create, delete_shape, None, delete_im, None)
             # open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished,  delete_im, None, create, copy , None,
             # zoomIn, zoom, zoomOut, fitWindow, fitWidth)
             #  (open, opendir, changeSavedir, openNextImg, openPrevImg, verify, save, finished, None, create, copy,delete_im, None,
@@ -579,7 +583,7 @@ class MainWindow(QMainWindow, WindowMixin):
         p = Process(target=libs.cut_bbox.finished_check, args=(os.path.join(self.dirname,'../'), ))
         p.start()
 
-    def auto_makebbox(self):
+    def makebbox(self):
         if None == self.dirname:
             return
 
@@ -593,10 +597,10 @@ class MainWindow(QMainWindow, WindowMixin):
                 p = Process(target=libs.auto_makebbox.do_makebbox, args=(path, self.defaultConfigFile, ))
                 p.start()
         else:
-            p = Process(target=libs.auto_makebbox.do_makebbox, args=(path,))
+            p = Process(target=libs.auto_makebbox.do_makebbox, args=(path,self.defaultConfigFile,))
             p.start()
 
-    def auto_prelebal(self):
+    def prelebal(self):
         if None == self.dirname:
             return
 
@@ -610,9 +614,25 @@ class MainWindow(QMainWindow, WindowMixin):
                 p = Process(target=libs.auto_prelebal.do_prelabel, args=(path,self.defaultConfigFile, ))
                 p.start()
         else:
-            p = Process(target=libs.auto_prelebal.do_prelabel, args=(path,))
+            p = Process(target=libs.auto_prelebal.do_prelabel, args=(path,self.defaultConfigFile,))
             p.start()
 
+    def searchid(self):
+        if None == self.dirname:
+            return
+
+        path = self.dirname
+        if 'JPEGImages' in self.dirname:
+            path = os.path.join(self.dirname,'../')
+
+        if os.path.exists(os.path.join(path, 'Annotations')):
+            reply =  QMessageBox.warning(self, 'Warning',"Annotations is existed.\nDo you want to rewrite it",QMessageBox.Yes|QMessageBox.Cancel)
+            if reply == QMessageBox.Yes:
+                p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile, ))
+                p.start()
+        else:
+            p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile,))
+            p.start()
 
     def noShapes(self):
         return not self.itemsToShapes
@@ -662,6 +682,7 @@ class MainWindow(QMainWindow, WindowMixin):
         self.actions.finished.setEnabled(True)
         self.actions.auto_bbox.setEnabled(True)
         self.actions.auto_label.setEnabled(True)
+        self.actions.auto_searchid.setEnabled(True)
         self.actions.delete_im.setEnabled(True)
 
     def toggleActions(self, value=True):
