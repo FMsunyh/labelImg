@@ -158,26 +158,34 @@ def do_fun(path,defaultConfigFile):
         xml_context.boxes, xml_context.labels = callback2boxes(callback)
         # print('detect result : {}, {}'.format(xml_context.boxes, xml_context.labels))
 
-        if xml_context.labels[0] in ids:
-            ids[xml_context.labels[0]] = ids[xml_context.labels[0]] + 1
+        # if len(xml_context.labels)>0:
+        if -1>0:
+            if xml_context.labels[0] in ids:
+                ids[xml_context.labels[0]] = ids[xml_context.labels[0]] + 1
+            else:
+                ids[xml_context.labels[0]] = 1
+
+            print('[{}/{}] {}'.format(count,dataSet.size(), xml_context.labels[0]))
         else:
-            ids[xml_context.labels[0]] = 1
+            print('[{}/{}] No ID'.format(count,dataSet.size()))
 
-        print('[{}/{}]'.format(count,dataSet.size()))
-
-        if count >10:
+        if count >=10:
             break
 
-    result = sorted(ids.items(), key=lambda d: d[1],reverse = True)
+    if len(ids) > 0:
 
+        result = sorted(ids.items(), key=lambda d: d[1],reverse = True)
 
-    table = PrettyTable(["ID", "SCORE"])
-    table.align["ID"] = "l"
-    table.padding_width = 1
-    for tup in result:
-        table.add_row([tup[0], tup[1]])
+        table = PrettyTable(["ID", "SCORE"])
+        table.align["ID"] = "l"
+        table.padding_width = 1
+        for tup in result:
+            table.add_row([tup[0], tup[1]])
 
-    print(table)
+        print(table)
+
+    else:
+        print('Nothing ...')
 
 def do_searchid(input_path, defaultConfigFile):
     do_fun(input_path, defaultConfigFile)

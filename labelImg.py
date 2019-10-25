@@ -625,14 +625,15 @@ class MainWindow(QMainWindow, WindowMixin):
         if 'JPEGImages' in self.dirname:
             path = os.path.join(self.dirname,'../')
 
-        if os.path.exists(os.path.join(path, 'Annotations')):
-            reply =  QMessageBox.warning(self, 'Warning',"Annotations is existed.\nDo you want to rewrite it",QMessageBox.Yes|QMessageBox.Cancel)
-            if reply == QMessageBox.Yes:
-                p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile, ))
-                p.start()
-        else:
-            p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile,))
-            p.start()
+        # if os.path.exists(os.path.join(path, 'Annotations')):
+        #     reply =  QMessageBox.warning(self, 'Warning',"Annotations is existed.\nDo you want to rewrite it",QMessageBox.Yes|QMessageBox.Cancel)
+        #     if reply == QMessageBox.Yes:
+        #         p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile, ))
+        #         p.start()
+        # else:
+
+        p = Process(target=libs.auto_searchid.do_searchid, args=(path,self.defaultConfigFile,))
+        p.start()
 
     def noShapes(self):
         return not self.itemsToShapes
